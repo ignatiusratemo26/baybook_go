@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -167,11 +169,38 @@ func createBookingHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Booking creation failed", http.StatusInternalServerError)
 		return
 	}
-	booking.ID = res.InsertedID(primitive.ObjectID)
+	booking.ID = res.InsertedID.(primitive.ObjectID)
 	json.NewEncoder(w).Encode(booking)
 }
 
-// func userBookingsHandler(w http.ResponseWriter, r * http.Request) {
-// 	userID, _ := getUserFromToken(r)
-// 	boo
-// }
+func userBookingsHandler(w http.ResponseWriter, r *http.Request) {
+	userID, _ := getUserFromToken(r)
+	bookingsCollection := mongoClient.Database("baybookDB").Collection("bookings")
+
+	cursor, err := bookingsCollection.Find(context.TODO(), bson.M{"user": userID})
+	if err != nil {
+		http.Error(w, "Error fetching bookings", http.StatusInternalServerError)
+		return
+	}
+	var bookings []Booking
+	cursor.All(context.TODO(), &bookings)
+	json.NewEncoder(w).Encode(bookings)
+}
+
+func main() {
+	initMongo()
+
+	r := mux.NewRouter()
+	r.HandleFunc("/api/register", registerHandler).Methods("POST")
+	r.HandleFunc("/api/login", loginHandler).Methods("POST")
+	r.HandleFunc("/api/logout", logoutHandler).Methods("POST")
+	r.HandleFunc("/api/profile", profileHandler).Methods("GET")
+	r.HandleFunc("/api/places", createPlaceHandler).Methods("POST")
+	r.HandleFunc("/api/user-places", userPlacesHandler).Methods("GET")
+	r.HandleFunc("/api/bookings", createBookingHandler).Methods("POST")
+	r.HandleFunc("/api/user-bookings", userBookingsHandler).Methods("GET")
+
+	cors := handlers.CORS(handlers.AllowedOrigins([]string{"http://127.0.0.1:5173"}), handlers.AllowCredentials())
+	log.Println("Server running on:4000")
+	http.ListenAndServe(":4000", cors(r))
+}
