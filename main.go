@@ -1,6 +1,7 @@
 package main
 
 import (
+	"baybook_go/models"
 	"context"
 	"encoding/json"
 	"log"
@@ -62,7 +63,7 @@ func getUserFromToken(r *http.Request) (primitive.ObjectID, error) {
 
 // auth and user routes
 func registerHandler(w http.ResponseWriter, r *http.Request) {
-	var user User
+	var user models.User
 	json.NewDecoder(r.Body).Decode(&user)
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	user.Password = string(hashedPassword)
@@ -86,7 +87,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	usersCollection := mongoClient.Database("baybookDB").Collection("users")
 
-	var user User
+	var user models.User
 	err := usersCollection.FindOne(context.TODO(), bson.M{"email": credentials.Email}).Decode(&user)
 	if err != nil || bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password)) != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
@@ -120,7 +121,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	usersCollection := mongoClient.Database("baybookDB").Collection("users")
-	var user User
+	var user models.User
 	usersCollection.FindOne(context.TODO(), bson.M{"_id": userID}).Decode(&user)
 	json.NewEncoder(w).Encode(user)
 }
@@ -128,7 +129,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 // places routes
 func createPlaceHandler(w http.ResponseWriter, r *http.Request) {
 	userID, _ := getUserFromToken(r)
-	var place Place
+	var place models.Place
 	json.NewDecoder(r.Body).Decode(&place)
 	place.Owner = userID
 
@@ -151,7 +152,7 @@ func userPlacesHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error fetching places", http.StatusInternalServerError)
 		return
 	}
-	var places []Place
+	var places []models.Place
 	cursor.All(context.TODO(), &places)
 	json.NewEncoder(w).Encode(places)
 }
@@ -159,7 +160,7 @@ func userPlacesHandler(w http.ResponseWriter, r *http.Request) {
 // booking routes
 func createBookingHandler(w http.ResponseWriter, r *http.Request) {
 	userID, _ := getUserFromToken(r)
-	var booking Booking
+	var booking models.Booking
 	json.NewDecoder(r.Body).Decode(&booking)
 	booking.UserID = userID
 
@@ -182,7 +183,7 @@ func userBookingsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error fetching bookings", http.StatusInternalServerError)
 		return
 	}
-	var bookings []Booking
+	var bookings []models.Booking
 	cursor.All(context.TODO(), &bookings)
 	json.NewEncoder(w).Encode(bookings)
 }
