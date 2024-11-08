@@ -65,13 +65,68 @@ func getUserFromToken(r *http.Request) (primitive.ObjectID, error) {
 }
 
 // auth and user routes
+// func registerHandler(w http.ResponseWriter, r *http.Request) {
+// 	var user models.User
+// 	json.NewDecoder(r.Body).Decode(&user)
+// 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+// 	user.Password = string(hashedPassword)
+
+// 	usersCollection := mongoClient.Database("baybookDB").Collection("users")
+
+// 	// Check if email already exists
+// 	var existingUser models.User
+// 	err := usersCollection.FindOne(context.TODO(), bson.M{"email": user.Email}).Decode(&existingUser)
+// 	if err == nil {
+// 		http.Error(w, "Email already in use", http.StatusUnprocessableEntity)
+// 		return
+// 	}
+
+//		res, err := usersCollection.InsertOne(context.TODO(), user)
+//		if err != nil {
+//			http.Error(w, "User creation failed", http.StatusUnprocessableEntity)
+//			return
+//		}
+//		user.ID = res.InsertedID.(primitive.ObjectID)
+//		json.NewEncoder(w).Encode(user)
+//	}
+//
+// auth and user routes
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	var user models.User
-	json.NewDecoder(r.Body).Decode(&user)
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	// Validate email
+	if user.Email == "" {
+		http.Error(w, "Email is required", http.StatusBadRequest)
+		return
+	}
+
+	// Hash the password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+		return
+	}
 	user.Password = string(hashedPassword)
 
 	usersCollection := mongoClient.Database("baybookDB").Collection("users")
+
+	// Check if email already exists
+	var existingUser models.User
+	err = usersCollection.FindOne(context.TODO(), bson.M{"email": user.Email}).Decode(&existingUser)
+	if err == nil {
+		http.Error(w, "Email already in use", http.StatusUnprocessableEntity)
+		return
+	} else if err != mongo.ErrNoDocuments {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	// Insert the new user
 	res, err := usersCollection.InsertOne(context.TODO(), user)
 	if err != nil {
 		http.Error(w, "User creation failed", http.StatusUnprocessableEntity)
