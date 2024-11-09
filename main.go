@@ -159,40 +159,6 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-// places routes
-func createPlaceHandler(w http.ResponseWriter, r *http.Request) {
-	userID, _ := getUserFromToken(r)
-	var place models.Place
-	json.NewDecoder(r.Body).Decode(&place)
-	place.Owner = userID
-
-	// Ensuring the place ID is not set or is set to a new unique value
-	place.ID = primitive.NewObjectID()
-
-	placesCollection := mongoClient.Database("baybookDB").Collection("places")
-	res, err := placesCollection.InsertOne(context.TODO(), place)
-	if err != nil {
-		http.Error(w, "Place creation failed", http.StatusInternalServerError)
-		return
-	}
-	place.ID = res.InsertedID.(primitive.ObjectID)
-	json.NewEncoder(w).Encode(place)
-}
-
-func userPlacesHandler(w http.ResponseWriter, r *http.Request) {
-	userID, _ := getUserFromToken(r)
-	placesCollection := mongoClient.Database("baybookDB").Collection("places")
-
-	cursor, err := placesCollection.Find(context.TODO(), bson.M{"owner": userID})
-	if err != nil {
-		http.Error(w, "Error fetching places", http.StatusInternalServerError)
-		return
-	}
-	var places []models.Place
-	cursor.All(context.TODO(), &places)
-	json.NewEncoder(w).Encode(places)
-}
-
 // booking routes
 func createBookingHandler(w http.ResponseWriter, r *http.Request) {
 	userID, _ := getUserFromToken(r)
@@ -232,8 +198,6 @@ func main() {
 	r.HandleFunc("/api/login", loginHandler).Methods("POST")
 	r.HandleFunc("/api/logout", logoutHandler).Methods("POST")
 	r.HandleFunc("/api/profile", profileHandler).Methods("GET")
-	r.HandleFunc("/api/places", createPlaceHandler).Methods("POST")
-	r.HandleFunc("/api/user-places", userPlacesHandler).Methods("GET")
 	r.HandleFunc("/api/bookings", createBookingHandler).Methods("POST")
 	r.HandleFunc("/api/user-bookings", userBookingsHandler).Methods("GET")
 
