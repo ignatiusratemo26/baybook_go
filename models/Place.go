@@ -10,4 +10,9 @@ type Place struct {
 	Description string             `bson:"description" json:"description"`
 	Photos      []string           `bson:"photos" json:"photos"`
 	Price       float64            `bson:"price" json:"price"`
+	Perks       []string           `bson:"perks" json:"perks"`
+	ExtraInfo   string             `bson:"extraInfo" json:"extraInfo"`
+	CheckIn     int                `bson:"checkIn" json:"checkIn"`
+	CheckOut    int                `bson:"checkOut" json:"checkOut"`
+	MaxGuests   int                `bson:"maxGuests" json:"maxGuests"`
 }
