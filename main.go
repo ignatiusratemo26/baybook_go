@@ -237,7 +237,12 @@ func main() {
 	r.HandleFunc("/api/bookings", createBookingHandler).Methods("POST")
 	r.HandleFunc("/api/user-bookings", userBookingsHandler).Methods("GET")
 
-	cors := handlers.CORS(handlers.AllowedOrigins([]string{"http://127.0.0.1:5173"}), handlers.AllowCredentials())
+	cors := handlers.CORS(
+		handlers.AllowedOrigins([]string{"http://localhost:5173"}), // Adjusted origin
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization", "Accept", "X-Requested-With", "Origin"}),
+		handlers.AllowCredentials(),
+	)
 	log.Println("Server running on:4000")
 	http.ListenAndServe(":4000", cors(r))
 }
