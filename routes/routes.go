@@ -8,8 +8,8 @@ import (
 
 func RegisterRoutes() *mux.Router {
 	r := mux.NewRouter()
-	// ...existing code...
 	r.HandleFunc("/api/places", controllers.GetPlaces).Methods("GET")
+	r.HandleFunc("/api/places/{id}", controllers.GetPlaceByID).Methods("GET")
 	r.HandleFunc("/api/places", controllers.CreatePlaceHandler).Methods("POST")
 	r.HandleFunc("/api/user-places", controllers.UserPlacesHandler).Methods("GET")
 	r.HandleFunc("/api/register", controllers.RegisterHandler).Methods("POST")
@@ -18,6 +18,5 @@ func RegisterRoutes() *mux.Router {
 	r.HandleFunc("/api/profile", controllers.ProfileHandler).Methods("GET")
 	r.HandleFunc("/api/bookings", controllers.CreateBookingHandler).Methods("POST")
 
-	// ...existing code...
 	return r
 }

@@ -9,8 +9,10 @@ import (
 	"baybook_go/data"
 	"baybook_go/models"
 
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func GetPlaces(w http.ResponseWriter, r *http.Request) {
@@ -68,4 +70,33 @@ func CreatePlaceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	place.ID = res.InsertedID.(primitive.ObjectID)
 	json.NewEncoder(w).Encode(place)
+}
+
+func GetPlaceByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	var place models.Place
+
+	placesCollection := data.GetMongoClient().Database("baybookDB").Collection("places")
+
+	err = placesCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&place)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "Place not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(place)
+
 }
