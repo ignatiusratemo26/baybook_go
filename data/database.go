@@ -4,14 +4,18 @@ import (
 	"context"
 	"log"
 	"os"
+	"sync"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var mongoClient *mongo.Client
+var (
+	mongoClient *mongo.Client
+	once        sync.Once
+)
 
-func initMongo() {
+func InitMongo() {
 	var err error
 	mongoURI := os.Getenv("MONGO_URL")
 	if mongoURI == "" {

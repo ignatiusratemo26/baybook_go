@@ -1,35 +1,19 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
-	"os"
+
+	"baybook_go/data"
+	"baybook_go/routes"
 
 	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var mongoClient *mongo.Client
-
-func initMongo() {
-	var err error
-	mongoURI := os.Getenv("MONGO_URL")
-	if mongoURI == "" {
-		mongoURI = "mongodb://localhost:27017"
-	}
-	mongoClient, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoURI))
-	if err != nil {
-		log.Fatal("Mongo connection error:", err)
-	}
-}
-
 func main() {
-	initMongo()
+	data.InitMongo()
 
-	r := mux.NewRouter()
+	r := routes.RegisterRoutes()
 
 	cors := handlers.CORS(
 		handlers.AllowedOrigins([]string{"http://localhost:5173"}), // Adjusted origin

@@ -11,23 +11,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-func init() {
-	clientOptions := options.Client().ApplyURI("your_mongodb_connection_string")
-	client, err := mongo.Connect(context.TODO(), clientOptions)
-	if err != nil {
-		panic(err)
-	}
-
-	err = client.Ping(context.TODO(), nil)
-	if err != nil {
-		panic(err)
-	}
-
-}
 
 func GetPlaces(w http.ResponseWriter, r *http.Request) {
 	placeCollection := data.GetMongoClient().Database("baybookDB").Collection("places")
