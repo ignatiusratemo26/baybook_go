@@ -16,7 +16,8 @@ func RegisterRoutes() *mux.Router {
 	r.HandleFunc("/api/login", controllers.LoginHandler).Methods("POST")
 	r.HandleFunc("/api/logout", controllers.LogoutHandler).Methods("POST")
 	r.HandleFunc("/api/profile", controllers.ProfileHandler).Methods("GET")
-	r.HandleFunc("/api/bookings", controllers.CreateBookingHandler).Methods("POST")
+	r.HandleFunc("/api/places/{placeID}/bookings", controllers.CreateBookingHandler).Methods("POST")
+	r.HandleFunc("/api/bookings", controllers.UserBookingsHandler).Methods("GET")
 
 	return r
 }
