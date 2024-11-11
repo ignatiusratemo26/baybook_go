@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -31,14 +30,6 @@ func CreateBookingHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid place ID", http.StatusBadRequest)
 		return
 	}
-
-	// Log the incoming request body for debugging
-	bodyBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
-		return
-	}
-	log.Printf("Request body: %s", string(bodyBytes))
 
 	var bookingPayload models.BookingPayload
 	var booking models.Booking
@@ -71,6 +62,10 @@ func CreateBookingHandler(w http.ResponseWriter, r *http.Request) {
 	booking.Place = placeID
 	booking.CheckIn = check_in
 	booking.CheckOut = check_out
+	booking.NumberOfGuests = bookingPayload.NumberOfGuests
+	booking.Name = bookingPayload.Name
+	booking.Phone = bookingPayload.Phone
+	booking.Price = bookingPayload.Price
 
 	// Insert the booking into the database
 	bookingsCollection := data.GetMongoClient().Database("baybookDB").Collection("bookings")
