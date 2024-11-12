@@ -13,7 +13,36 @@ import (
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
+
+func GetBookingById(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	bookingID, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid booking ID", http.StatusBadRequest)
+		return
+
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var booking models.Booking
+	bookingCollection := data.GetMongoClient().Database("baybookDB").Collection("bookings")
+
+	err = bookingCollection.FindOne(ctx, bson.M{"_id": bookingID}).Decode(&booking)
+
+	if err != nil {
+		if err != mongo.ErrNoDocuments {
+			http.Error(w, "No bookings found", http.StatusNotFound)
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+}
 
 // CreateBookingHandler creates a new booking for a specific place by its ID
 func CreateBookingHandler(w http.ResponseWriter, r *http.Request) {
@@ -84,16 +113,47 @@ func CreateBookingHandler(w http.ResponseWriter, r *http.Request) {
 func UserBookingsHandler(w http.ResponseWriter, r *http.Request) {
 	userID, _ := getUserFromToken(r)
 	bookingsCollection := data.GetMongoClient().Database("baybookDB").Collection("bookings")
+	placesCollection := data.GetMongoClient().Database("baybookDB").Collection("places")
 
 	cursor, err := bookingsCollection.Find(context.TODO(), bson.M{"user": userID})
 	if err != nil {
 		http.Error(w, "Error fetching bookings", http.StatusInternalServerError)
 		return
 	}
+	defer cursor.Close(context.TODO())
 
 	var bookings []models.Booking
+	if err = cursor.All(context.TODO(), &bookings); err != nil {
+		http.Error(w, "Error decoding bookings", http.StatusInternalServerError)
+		return
+	}
 
-	cursor.All(context.TODO(), &bookings)
+	// Prepare the enriched bookings
+	var enrichedBookings []models.EnrichedBooking
+	for _, booking := range bookings {
+		var place models.Place
+		err := placesCollection.FindOne(context.TODO(), bson.M{"_id": booking.Place}).Decode(&place)
+		if err != nil {
+			http.Error(w, "Error fetching place details", http.StatusInternalServerError)
+			return
+		}
+
+		// Create the enriched booking
+		enrichedBooking := models.EnrichedBooking{
+			ID:             booking.ID,
+			CheckIn:        booking.CheckIn,
+			CheckOut:       booking.CheckOut,
+			NumberOfGuests: booking.NumberOfGuests,
+			Name:           booking.Name,
+			Phone:          booking.Phone,
+			Price:          booking.Price,
+			User:           booking.User,
+			Place:          place, // Full place object
+		}
+
+		enrichedBookings = append(enrichedBookings, enrichedBooking)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(bookings)
+	json.NewEncoder(w).Encode(enrichedBookings)
 }
