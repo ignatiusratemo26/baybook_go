@@ -21,6 +21,13 @@ func main() {
 		handlers.AllowedHeaders([]string{"Content-Type", "Authorization", "Accept", "X-Requested-With", "Origin"}),
 		handlers.AllowCredentials(),
 	)
+
+	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
+
+	err := http.ListenAndServe(":4000", cors(r))
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Println("Server running on:4000")
-	http.ListenAndServe(":4000", cors(r))
+
 }
