@@ -1,4 +1,7 @@
-.env
-/.env
 /controllers/places.go
 /uploads/
+/controllers/paymentHandlers.go
+
+.env
+/.env
+baybook_go/.env
