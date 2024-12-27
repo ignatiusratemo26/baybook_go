@@ -1,6 +1,6 @@
 /controllers/places.go
 /uploads/
-/controllers/paymentHandlers.go
+
 
 .env
 *.env

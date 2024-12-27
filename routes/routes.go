@@ -21,6 +21,10 @@ func RegisterRoutes() *mux.Router {
 	r.HandleFunc("/api/bookings/{id}", controllers.GetBookingById).Methods("GET")
 	r.HandleFunc("/api/uploads", controllers.UploadHandler).Methods("POST")
 
+	r.HandleFunc("/api/payments/mpesa", controllers.InitiateMpesaPayment).Methods("POST")
+	r.HandleFunc("/api/payments/mpesa/callback", controllers.MpesaCallback).Methods("POST")
+	r.HandleFunc("/api/payments/{id}", controllers.GetPaymentStatus).Methods("GET")
+
 	// r.HandleFunc("/api/places/{id}/reviews", controllers.CreateReviewHandler).Methods("POST")
 
 	return r
